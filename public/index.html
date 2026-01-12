@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>PokeGateway Pro</title>
+    <style>
+        body { font-family: sans-serif; background: #f3f4f6; padding: 20px; display:flex; justify-content:center; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
+        input { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; margin-top: 5px; cursor: pointer; color: white; border: none; border-radius: 5px; }
+        .btn-blue { background: #3b82f6; } .btn-green { background: #10b981; } .btn-purple { background: #8b5cf6; } .btn-red { background: #ef4444; width: auto; float: right; }
+        .hidden { display: none; }
+        .key-box { background: #fee2e2; color: #b91c1c; padding: 10px; text-align: center; border: 1px dashed #b91c1c; margin: 15px 0; font-family: monospace; }
+        pre { background: #1f2937; color: #4ade80; padding: 15px; border-radius: 5px; overflow: auto; max-height: 200px; font-size: 0.8rem; }
+        a { color: #3b82f6; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="loginPage" class="container">
+        <h2 style="text-align:center">🔐 Masuk Dashboard</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button class="btn-blue" onclick="login()">Masuk</button>
+        <p style="text-align:center; margin-top:15px;">
+            Belum punya akun? <a href="#" onclick="showRegister()">Daftar Disini</a>
+        </p>
+    </div>
+
+    <div id="registerPage" class="container hidden">
+        <h2 style="text-align:center">📝 Daftar Developer</h2>
+        <input type="text" id="regCompany" placeholder="Nama Perusahaan / Kampus">
+        <input type="email" id="regEmail" placeholder="Email">
+        <input type="password" id="regPassword" placeholder="Password">
+        <button class="btn-green" onclick="register()">Daftar Sekarang</button>
+        <p style="text-align:center; margin-top:15px;">
+            Sudah punya akun? <a href="#" onclick="showLogin()">Login Disini</a>
+        </p>
+    </div>
+
+    <div id="dashboardPage" class="container hidden">
+        <button class="btn-red" onclick="logout()">Logout</button>
+        <h2>⚡ Dashboard</h2>
+        
+        <p>API Key Anda:</p>
+        <div id="apiKeyDisplay" class="key-box">Loading...</div>
+        <button class="btn-green" onclick="generateKey()">Generate New Key</button>
+        <hr>
+
+        <h3>🌍 Cari Global (PokeAPI)</h3>
+        <div style="display:flex; gap:10px;">
+            <input type="text" id="globalName" placeholder="Ex: pikachu">
+            <button class="btn-blue" style="width:100px; margin-top:5px" onclick="testGlobal()">Cari</button>
+        </div>
+
+        <h3>📝 Buat Local (MySQL)</h3>
+        <input type="text" id="customName" placeholder="Nama">
+        <input type="text" id="customType" placeholder="Tipe">
+        <button class="btn-purple" onclick="createCustom()">Simpan DB</button>
+
+        <h3>📂 Data Komunitas</h3>
+        <button class="btn-blue" onclick="listCustom()">Lihat Semua</button>
+
+        <h4>Response JSON:</h4>
+        <pre id="output">...</pre>
+    </div>
+
+    <script>
+        const API = 'http://localhost:3000';
+        let token = localStorage.getItem('token');
+        if(token) showDashboard();
+
+        function showRegister() { document.getElementById('loginPage').classList.add('hidden'); document.getElementById('registerPage').classList.remove('hidden'); }
+        function showLogin() { document.getElementById('registerPage').classList.add('hidden'); document.getElementById('loginPage').classList.remove('hidden'); }
+
+        async function register() {
+            const company_name = document.getElementById('regCompany').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const res = await fetch(`${API}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password, company_name}) });
+            const data = await res.json();
+            if(data.status==='success') { alert("Berhasil! Silakan Login."); showLogin(); } else { alert(data.error); }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password}) });
+            const data = await res.json();
+            if(data.token) { localStorage.setItem('token', data.token); token=data.token; showDashboard(); } else { alert(data.error); }
+        }
+
+        function logout() { localStorage.removeItem('token'); location.reload(); }
+
+        async function showDashboard() {
+            document.getElementById('loginPage').classList.add('hidden'); document.getElementById('registerPage').classList.add('hidden'); document.getElementById('dashboardPage').classList.remove('hidden');
+            const res = await fetch(`${API}/dashboard/my-key?token=${token}`);
+            const data = await res.json();
+            document.getElementById('apiKeyDisplay').innerText = data.key_string || "Belum ada Key";
+        }
+
+        async function generateKey() { await fetch(`${API}/dashboard/generate-key`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token}) }); showDashboard(); }
+        async function testGlobal() { const name = document.getElementById('globalName').value; callApi(`${API}/v1/pokemon/${name.toLowerCase()}`, 'GET'); }
+        async function createCustom() { const name = document.getElementById('customName').value; const type = document.getElementById('customType').value; callApi(`${API}/v1/pokemon`, 'POST', { name, type, base_power:100 }); }
+        async function listCustom() { callApi(`${API}/v1/custom-pokemon`, 'GET'); }
+
+        async function callApi(url, method, body=null) {
+            const key = document.getElementById('apiKeyDisplay').innerText;
+            const opts = { method, headers: { 'Content-Type':'application/json', 'x-api-key': key } };
+            if(body) opts.body = JSON.stringify(body);
+            document.getElementById('output').innerText = "Loading...";
+            const res = await fetch(url, opts);
+            const data = await res.json();
+            document.getElementById('output').innerText = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
