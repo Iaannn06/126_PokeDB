@@ -1,7 +1,6 @@
 const db = require('../config/db');
 
 const validateApiKey = async (req, res, next) => {
-    // Ambil API Key dari header
     const apiKey = req.headers['x-api-key'];
 
     if (!apiKey) {
@@ -9,14 +8,11 @@ const validateApiKey = async (req, res, next) => {
     }
 
     try {
-        // Cek ke database apakah key ada dan aktif
         const [rows] = await db.query('SELECT * FROM api_keys WHERE key_string = ? AND is_active = 1', [apiKey]);
         
         if (rows.length > 0) {
-            // Valid! Lanjut ke controller
             next(); 
         } else {
-            // Tidak valid
             res.status(403).json({ error: "API Key tidak valid." });
         }
     } catch (error) {

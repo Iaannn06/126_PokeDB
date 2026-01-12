@@ -32,8 +32,6 @@ exports.login = async (req, res) => {
 
 exports.generateKey = async (req, res) => {
     const userId = req.body.token;
-    
-    // DEBUG: Cek apakah ID user masuk
     console.log("➡️ Request Generate Key dari User ID:", userId);
 
     const newKey = `pk_${uuidv4().slice(0, 8)}`;
