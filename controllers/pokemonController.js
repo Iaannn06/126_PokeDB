@@ -34,3 +34,11 @@ exports.createCustomPokemon = async (req, res) => {
     }
 };
 
+exports.getCustomPokemon = async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM custom_pokemons ORDER BY id DESC');
+        res.json({ source: "Local Database (PokeDB)", total: rows.length, data: rows });
+    } catch (error) {
+        res.status(500).json(error);
+    }
+};
