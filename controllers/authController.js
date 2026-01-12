@@ -41,3 +41,12 @@ exports.generateKey = async (req, res) => {
     }
 };
 
+exports.getMyKey = async (req, res) => {
+    const userId = req.query.token;
+    try {
+        const [rows] = await db.query('SELECT key_string FROM api_keys WHERE user_id = ? ORDER BY id DESC LIMIT 1', [userId]);
+        res.json(rows[0] || { key_string: null });
+    } catch (error) {
+        res.status(500).json(error);
+    }
+};
