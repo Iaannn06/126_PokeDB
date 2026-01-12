@@ -17,3 +17,20 @@ exports.getGlobalPokemon = async (req, res) => {
     }
 };
 
+exports.createCustomPokemon = async (req, res) => {
+    const { name, type, base_power } = req.body;
+    const apiKey = req.headers['x-api-key'];
+
+    if (!name || !type) return res.status(400).json({ error: "Nama & Tipe wajib diisi" });
+
+    try {
+        const [result] = await db.query(
+            'INSERT INTO custom_pokemons (name, type, base_power, created_by_key) VALUES (?, ?, ?, ?)',
+            [name, type, base_power || 0, apiKey]
+        );
+        res.json({ status: "success", message: "Data tersimpan di MySQL!", id: result.insertId, name });
+    } catch (error) {
+        res.status(500).json(error);
+    }
+};
+
