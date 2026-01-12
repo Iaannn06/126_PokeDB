@@ -1,14 +1,12 @@
 const axios = require('axios');
 const db = require('../config/db');
 
-// --- HELPER: Cek Role User ---
 const checkUserRole = async (apiKey) => {
     const query = `SELECT u.id, u.role FROM users u JOIN api_keys k ON u.id = k.user_id WHERE k.key_string = ?`;
     const [rows] = await db.query(query, [apiKey]);
     return rows.length > 0 ? rows[0] : null;
 };
 
-// --- A. GLOBAL DATA ---
 exports.getGlobalPokemon = async (req, res) => {
     try {
         const { name } = req.params;
@@ -32,7 +30,6 @@ exports.getGlobalPokemon = async (req, res) => {
     } catch (error) { res.status(404).json({ error: "Pokemon tidak ditemukan." }); }
 };
 
-// --- B. CREATE ---
 exports.createCustomPokemon = async (req, res) => {
     const { name, type, sprite, hp, attack, defense, sp_attack, sp_defense, speed } = req.body;
     const apiKey = req.headers['x-api-key'];
@@ -47,7 +44,6 @@ exports.createCustomPokemon = async (req, res) => {
     } catch (error) { res.status(500).json(error); }
 };
 
-// --- C. READ (GET) ---
 exports.getCustomPokemon = async (req, res) => {
     const apiKey = req.headers['x-api-key'];
     const user = await checkUserRole(apiKey);
@@ -80,7 +76,6 @@ exports.getCustomPokemon = async (req, res) => {
     } catch (error) { res.status(500).json(error); }
 };
 
-// --- D. DELETE ---
 exports.deleteCustomPokemon = async (req, res) => {
     const apiKey = req.headers['x-api-key'];
     const { id } = req.params;
@@ -99,7 +94,6 @@ exports.deleteCustomPokemon = async (req, res) => {
     } catch (error) { res.status(500).json(error); }
 };
 
-// --- E. UPDATE (PUT) ---
 exports.updateCustomPokemon = async (req, res) => {
     const apiKey = req.headers['x-api-key'];
     const { id } = req.params;
