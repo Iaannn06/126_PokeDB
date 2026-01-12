@@ -9,3 +9,8 @@ router.post('/auth/login', authController.login);       // <-- Login
 router.post('/dashboard/generate-key', authController.generateKey);
 router.get('/dashboard/my-key', authController.getMyKey);
 
+router.get('/v1/pokemon/:name', validateKey, pokeController.getGlobalPokemon);
+router.post('/v1/pokemon', validateKey, pokeController.createCustomPokemon);
+router.get('/v1/custom-pokemon', validateKey, pokeController.getCustomPokemon);
+
+module.exports = router;
