@@ -15,3 +15,17 @@ exports.register = async (req, res) => {
         res.status(500).json(error);
     }
 };
+
+exports.login = async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const [rows] = await db.query('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
+        if (rows.length > 0) {
+            res.json({ status: 'success', token: rows[0].id, name: rows[0].company_name });
+        } else {
+            res.status(401).json({ error: 'Email atau Password salah' });
+        }
+    } catch (error) {
+        res.status(500).json(error);
+    }
+};
