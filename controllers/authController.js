@@ -32,12 +32,20 @@ exports.login = async (req, res) => {
 
 exports.generateKey = async (req, res) => {
     const userId = req.body.token;
+    
+    // DEBUG: Cek apakah ID user masuk
+    console.log("➡️ Request Generate Key dari User ID:", userId);
+
     const newKey = `pk_${uuidv4().slice(0, 8)}`;
+    
     try {
         await db.query('INSERT INTO api_keys (user_id, key_string) VALUES (?, ?)', [userId, newKey]);
+        
+        console.log("✅ Sukses Generate Key:", newKey); 
         res.json({ apiKey: newKey });
     } catch (error) {
-        res.status(500).json(error);
+        console.error("❌ ERROR SAAT INSERT KEY:", error); 
+        res.status(500).json({ error: error.message });
     }
 };
 
