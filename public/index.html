@@ -151,14 +151,23 @@
                 <h1 style="margin-bottom:20px; font-weight: 800; color: #1e293b;">Dashboard Overview</h1>
                 <div class="card">
                     <h3>🔑 API Key Anda</h3>
-                    <p style="color: #64748b; font-size: 0.9rem; margin-top: 5px;">Gunakan key ini di header <code>x-api-key</code> request Anda.</p>
                     <div class="api-key-box">
                         <span id="displayKey">Loading...</span>
                         <i class="fa-solid fa-copy" style="cursor:pointer; color:var(--primary)" onclick="copyKey()"></i>
                     </div>
-                    <button class="btn btn-primary" style="width:auto" onclick="generateKey()">
-                        <i class="fa-solid fa-rotate"></i> Generate New Key
-                    </button>
+                    
+                    <div style="display:flex; gap:10px; align-items:center; margin-top:15px;">
+                        <select id="keyDuration" style="padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
+                            <option value="7">Aktif 7 Hari</option>
+                            <option value="30" selected>Aktif 30 Hari</option>
+                            <option value="365">Aktif 1 Tahun</option>
+                        </select>
+                        
+                        <button class="btn btn-primary" style="width:auto; margin:0;" onclick="generateKey()">
+                            <i class="fa-solid fa-rotate"></i> Generate Key
+                        </button>
+                    </div>
+                    <p id="expiryInfo" style="font-size:0.8rem; color:#64748b; margin-top:10px;"></p>
                 </div>
             </div>
 
@@ -282,7 +291,20 @@
         async function loadKey() { try { const res = await fetch(`${API}/dashboard/my-key?token=${token}`); const data = await res.json(); document.getElementById('displayKey').innerText = data.key_string || "Belum ada key"; } catch(e) { logout(); } }
         async function login() { const email = document.getElementById('email').value; const password = document.getElementById('password').value; try { const res = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password}) }); const data = await res.json(); if(data.token) { localStorage.setItem('token', data.token); token=data.token; switchAuth('dashboard'); loadKey(); } else { alert(data.error); } } catch(e) { alert("Server Error. Pastikan Backend jalan di port 3000."); } }
         async function register() { const company = document.getElementById('regCompany').value; const email = document.getElementById('regEmail').value; const pass = document.getElementById('regPassword').value; try { const res = await fetch(`${API}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password:pass, company_name:company}) }); const data = await res.json(); if(data.status==='success') { alert("Sukses!"); switchAuth('login'); } else { alert(data.error); } } catch(e) { alert("Server Error"); } }
-        async function generateKey() { await fetch(`${API}/dashboard/generate-key`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token}) }); loadKey(); }
+        async function generateKey() {
+            const duration = document.getElementById('keyDuration').value; 
+            const res = await fetch(`${API}/dashboard/generate-key`, { 
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify({ token: token, duration: duration }) // Kirim durasi
+            });
+            const data = await res.json();
+            loadKey(); 
+            if(data.expires_at) {
+                const date = new Date(data.expires_at).toLocaleDateString('id-ID');
+                document.getElementById('expiryInfo').innerText = `Key baru ini akan kadaluarsa pada: ${date}`;
+            }
+        }
 
         async function testGlobal() {
             const name = document.getElementById('globalInput').value;

@@ -32,17 +32,21 @@ exports.login = async (req, res) => {
 
 exports.generateKey = async (req, res) => {
     const userId = req.body.token;
-    console.log("➡️ Request Generate Key dari User ID:", userId);
-
-    const newKey = `pk_${uuidv4().slice(0, 8)}`;
+    const durationDays = parseInt(req.body.duration) || 30; 
+    
+    const newKey = `pk_${require('uuid').v4().slice(0, 8)}`;
     
     try {
-        await db.query('INSERT INTO api_keys (user_id, key_string) VALUES (?, ?)', [userId, newKey]);
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + durationDays); 
+
+        await db.query(
+            'INSERT INTO api_keys (user_id, key_string, expires_at) VALUES (?, ?, ?)', 
+            [userId, newKey, expiryDate]
+        );
         
-        console.log("✅ Sukses Generate Key:", newKey); 
-        res.json({ apiKey: newKey });
+        res.json({ apiKey: newKey, expires_at: expiryDate });
     } catch (error) {
-        console.error("❌ ERROR SAAT INSERT KEY:", error); 
         res.status(500).json({ error: error.message });
     }
 };
